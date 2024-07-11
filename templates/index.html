@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            color: #333;
+            margin-top: 20px;
+        }
+        form {
+            background-color: #fff;
+            max-width: 400px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="date"], button {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result, #alarm {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 8px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Weather Prediction</h1>
+    <form id="predictionForm">
+        <label for="location">Location:</label>
+        <input type="text" id="location" name="location" required>
+        <br>
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+        <br>
+        <button type="submit">Predict</button>
+    </form>
+    <div id="result"></div>
+    <div id="alarm"></div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const location = document.getElementById('location').value;
+            const date = document.getElementById('date').value;
+            try {
+                const response = await fetch('http://127.0.0.1:5000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ location, date })
+                });
+                const result = await response.json();
+                if (typeof result.prediction === 'string' && result.prediction === 'Error occurred') {
+                    document.getElementById('result').textContent = `Prediction: ${result.prediction}. Please check the console for more details.`;
+                } else if (typeof result.prediction === 'string') {
+                    document.getElementById('result').textContent = `Prediction: ${result.prediction}`;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        Condition: ${result.prediction.condition}<br>
+                        Temperature: ${result.prediction.temperature} °C<br>
+                        Humidity: ${result.prediction.humidity} %<br>
+                        Rainfall: ${result.prediction.rainfall} mm <br>
+                        Wind Speed: ${result.prediction.wind_speed} km/h <br>
+                        sunrise: ${result.prediction.sunrise} <br>
+                        sunset: ${result.prediction.sunset} <br>
+                        moonrise: ${result.prediction.moonrise} <br>
+                        moonset: ${result.prediction.moonset} <br>
+                    `;
+                    if (result.alarm) {
+                        document.getElementById('alarm').innerHTML = `
+                            <div style="color: red; font-weight: bold;">
+                                Warning: Severe weather conditions expected!
+                            </div>
+                        `;
+                    } else {
+                        document.getElementById('alarm').innerHTML = '';
+                    }
+                }
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('alarm').style.display = 'block';
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('result').textContent = 'An error occurred';
+            }
+        });
+    </script>
+</body>
+</html>
